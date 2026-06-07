@@ -244,7 +244,7 @@ class RemoteHandler(BaseHTTPRequestHandler):
 def main():
     print(f"""
 ╔══════════════════════════════════════════╗
-║       CURSOR REMOTE v2 — LAPTOP          ║
+║       AI AGENT REMOTE — LAPTOP          ║
 ╠══════════════════════════════════════════╣
 ║  Port  : {PORT}                            ║
 ║  Token : {SECRET_TOKEN[:8]}...                      ║
