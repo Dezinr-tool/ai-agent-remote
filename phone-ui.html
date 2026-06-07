@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Remote</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --border: #262626;
+  --border-focus: #444;
+  --accent: #e2ff6b;
+  --accent-dim: #c8e550;
+  --text: #f0f0f0;
+  --text-dim: #555;
+  --text-mid: #888;
+  --green: #4dff91;
+  --red: #ff5555;
+  --r: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+/* ── Auth Screen ── */
+#auth {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 32px;
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-logo h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+
+.auth-logo h1 span { color: var(--accent); }
+
+.auth-logo p {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  padding: 12px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+input:focus { border-color: var(--border-focus); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #0d0d0d;
+  border: none;
+  border-radius: var(--r);
+  padding: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+}
+
+.btn-primary:active { background: var(--accent-dim); transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* ── Main App ── */
+#app {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.topbar-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-mid);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-mid);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.icon-btn:active { background: var(--surface); }
+
+/* ── Target selector ── */
+.target-bar {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+
+.target-bar::-webkit-scrollbar { display: none; }
+
+.target-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.target-chip {
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-mid);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.target-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(226, 255, 107, 0.06);
+}
+
+.target-chip:active { opacity: 0.7; }
+
+/* ── Presets ── */
+.presets-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.presets-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.presets-row::-webkit-scrollbar { display: none; }
+
+.preset {
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-mid);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.preset:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Compose ── */
+.compose-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+textarea::placeholder { color: var(--text-dim); }
+
+.compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.char-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.run-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #0d0d0d;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+
+.run-btn:active { background: var(--accent-dim); transform: scale(0.97); }
+.run-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+.run-btn svg { width: 14px; height: 14px; }
+
+/* ── History Drawer ── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.history-item:active { border-color: var(--border-focus); }
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.history-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.history-app {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.history-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-mid);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.history-reuse {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* ── Settings Drawer ── */
+.settings-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  z-index: 51;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.settings-drawer.open { transform: translateY(0); }
+
+.settings-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--surface);
+  border: 1px solid var(--border-focus);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 10px 18px;
+  border-radius: 100px;
+  opacity: 0;
+  transition: all 0.25s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+
+.divider { height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-logo">
+    <h1>cursor<span>_</span>remote</h1>
+    <p>// phone → laptop bridge</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="field">
+      <div class="field-label">Server URL</div>
+      <input type="url" id="serverUrl" placeholder="https://remote.yourdomain.com" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <div class="field-label">Token</div>
+      <input type="password" id="tokenInput" placeholder="your-secret-token" autocomplete="off">
+    </div>
+    <button class="btn-primary" onclick="connect()">Connect →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="status-dot"></div>
+      <span class="topbar-title" id="connectedLabel">connected</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="openHistory()" title="History">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 4.5V8l2.5 2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+          <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+          <path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.757 3.757l1.06 1.06M11.182 11.182l1.061 1.061M3.757 12.243l1.06-1.06M11.182 4.818l1.061-1.061" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Target selector -->
+  <div class="target-bar">
+    <span class="target-label">→</span>
+    <button class="target-chip active" onclick="selectTarget(this, 'Cursor')" data-app="Cursor">Cursor</button>
+    <button class="target-chip" onclick="selectTarget(this, 'Claude')" data-app="Claude">Claude</button>
+    <button class="target-chip" onclick="selectTarget(this, 'ChatGPT')" data-app="ChatGPT">ChatGPT</button>
+    <button class="target-chip" onclick="selectTarget(this, 'Codex')" data-app="Codex">Codex</button>
+    <button class="target-chip" onclick="selectTarget(this, 'Terminal')" data-app="Terminal">Terminal</button>
+  </div>
+
+  <!-- Presets -->
+  <div class="presets-section">
+    <div class="section-title">Quick</div>
+    <div class="presets-row">
+      <button class="preset" onclick="usePreset('Review the current file and list all issues, improvements, and bugs.')">review</button>
+      <button class="preset" onclick="usePreset('Refactor this code for better readability and performance.')">refactor</button>
+      <button class="preset" onclick="usePreset('Write comprehensive tests covering edge cases and happy paths.')">tests</button>
+      <button class="preset" onclick="usePreset('Fix all TypeScript and ESLint errors in this file.')">fix errors</button>
+      <button class="preset" onclick="usePreset('Add proper error handling and loading states.')">error handling</button>
+      <button class="preset" onclick="usePreset('Add JSDoc comments and usage examples.')">docs</button>
+      <button class="preset" onclick="usePreset('Explain what this code does in simple terms.')">explain</button>
+      <button class="preset" onclick="usePreset('Optimize this for performance. Identify bottlenecks.')">optimize</button>
+    </div>
+  </div>
+
+  <!-- Compose -->
+  <div class="compose-section">
+    <textarea id="cmd" placeholder="Type a command..." oninput="updateCount()"></textarea>
+    <div class="compose-footer">
+      <span class="char-count" id="charCount">0</span>
+      <button class="run-btn" id="runBtn" onclick="sendCommand()">
+        <svg viewBox="0 0 14 14" fill="currentColor"><path d="M1 1l12 6-12 6V9l8-2-8-2V1z"/></svg>
+        Run
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- History Drawer -->
+<div class="drawer-overlay" id="historyOverlay" onclick="closeHistory()"></div>
+<div class="drawer" id="historyDrawer">
+  <div class="drawer-header">
+    <span class="drawer-title">// command history</span>
+    <button class="icon-btn" onclick="closeHistory()">✕</button>
+  </div>
+  <div class="drawer-body" id="historyList">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);padding:8px 0">No commands yet.</div>
+  </div>
+</div>
+
+<!-- Settings Drawer -->
+<div class="drawer-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<div class="settings-drawer" id="settingsDrawer">
+  <div class="settings-title">// settings</div>
+  
+  <div class="setting-row">
+    <div class="field-label">Token</div>
+    <input type="password" id="tokenEdit" placeholder="your-secret-token">
+  </div>
+
+  <div class="setting-row">
+    <div class="field-label">Server URL</div>
+    <input type="url" id="urlEdit" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <button class="btn-primary" onclick="saveSettings()">Save & Reconnect</button>
+  <button style="background:transparent;border:1px solid var(--border);color:var(--text-mid);border-radius:var(--r);padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;" onclick="disconnect()">Disconnect</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let serverUrl = localStorage.getItem('cr_url') || '';
+let token = localStorage.getItem('cr_token') || '';
+let currentTarget = 'Cursor';
+
+// Init
+window.onload = () => {
+  if (serverUrl && token) {
+    document.getElementById('serverUrl').value = serverUrl;
+    document.getElementById('tokenInput').value = token;
+    connect();
+  }
+};
+
+async function connect() {
+  const url = (document.getElementById('serverUrl').value || serverUrl).trim().replace(/\/$/, '');
+  const tok = (document.getElementById('tokenInput').value || token).trim();
+  
+  if (!url || !tok) { toast('URL and token required', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${url}/ping`, {
+      headers: { 'X-Token': tok },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (!res.ok) throw new Error('auth failed');
+    const data = await res.json();
+    
+    serverUrl = url;
+    token = tok;
+    localStorage.setItem('cr_url', url);
+    localStorage.setItem('cr_token', tok);
+    
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('connectedLabel').textContent = new URL(url).hostname;
+    
+    // Set registered target
+    if (data.registered_window?.app) {
+      selectTargetByName(data.registered_window.app);
+    }
+    
+    toast('connected ✓', 'success');
+  } catch(e) {
+    toast('connection failed', 'error');
+  }
+}
+
+function selectTarget(el, app) {
+  document.querySelectorAll('.target-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentTarget = app;
+  
+  // Register on server
+  fetch(`${serverUrl}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Token': token },
+    body: JSON.stringify({ app, label: app })
+  }).catch(() => {});
+}
+
+function selectTargetByName(app) {
+  const chip = document.querySelector(`[data-app="${app}"]`);
+  if (chip) { selectTarget(chip, app); }
+}
+
+function usePreset(text) {
+  document.getElementById('cmd').value = text;
+  updateCount();
+  document.getElementById('cmd').focus();
+}
+
+async function sendCommand() {
+  const cmd = document.getElementById('cmd').value.trim();
+  if (!cmd) return;
+  
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 14 14" width="14" height="14"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="34" stroke-dashoffset="34"><animate attributeName="stroke-dashoffset" values="34;0" dur="0.6s" repeatCount="indefinite"/></circle></svg> running`;
+  
+  try {
+    const res = await fetch(`${serverUrl}/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Token': token },
+      body: JSON.stringify({ command: cmd, app: currentTarget }),
+      signal: AbortSignal.timeout(8000)
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      const status = data.entry?.status;
+      if (status === 'executed') {
+        toast(`✓ executed in ${currentTarget}`, 'success');
+      } else {
+        toast(`copied — paste in ${currentTarget}`, '');
+      }
+      document.getElementById('cmd').value = '';
+      updateCount();
+    } else {
+      toast(data.error || 'error', 'error');
+    }
+  } catch(e) {
+    toast('connection lost', 'error');
+  }
+  
+  btn.disabled = false;
+  btn.innerHTML = `<svg viewBox="0 0 14 14" fill="currentColor"><path d="M1 1l12 6-12 6V9l8-2-8-2V1z"/></svg> Run`;
+}
+
+// History
+function openHistory() {
+  loadHistory();
+  document.getElementById('historyOverlay').classList.add('open');
+  document.getElementById('historyDrawer').classList.add('open');
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+  document.getElementById('historyDrawer').classList.remove('open');
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch(`${serverUrl}/history`, {
+      headers: { 'X-Token': token },
+      signal: AbortSignal.timeout(4000)
+    });
+    const data = await res.json();
+    renderHistory(data.history || []);
+  } catch(e) {}
+}
+
+function renderHistory(items) {
+  const list = document.getElementById('historyList');
+  if (!items.length) {
+    list.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-dim);padding:8px 0">No commands yet.</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="history-item" onclick="reuseCmd(${JSON.stringify(item.command).replace(/</g,'&lt;')})">
+      <div class="history-meta">
+        <span class="history-time">${item.timestamp}</span>
+        <span class="history-app">${item.app || 'cursor'}</span>
+      </div>
+      <div class="history-text">${esc(item.command)}</div>
+      <div class="history-reuse">↩ tap to reuse</div>
+    </div>
+  `).join('');
+}
+
+function reuseCmd(cmd) {
+  document.getElementById('cmd').value = cmd;
+  updateCount();
+  closeHistory();
+  document.getElementById('cmd').focus();
+}
+
+// Settings
+function openSettings() {
+  document.getElementById('tokenEdit').value = token;
+  document.getElementById('urlEdit').value = serverUrl;
+  document.getElementById('settingsOverlay').classList.add('open');
+  document.getElementById('settingsDrawer').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+  document.getElementById('settingsDrawer').classList.remove('open');
+}
+
+async function saveSettings() {
+  const newToken = document.getElementById('tokenEdit').value.trim();
+  const newUrl = document.getElementById('urlEdit').value.trim().replace(/\/$/, '');
+  
+  if (!newToken || !newUrl) { toast('fill all fields', 'error'); return; }
+  
+  token = newToken;
+  serverUrl = newUrl;
+  localStorage.setItem('cr_token', token);
+  localStorage.setItem('cr_url', serverUrl);
+  closeSettings();
+  
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth').style.display = 'flex';
+  document.getElementById('serverUrl').value = serverUrl;
+  document.getElementById('tokenInput').value = token;
+  connect();
+}
+
+function disconnect() {
+  localStorage.removeItem('cr_url');
+  localStorage.removeItem('cr_token');
+  location.reload();
+}
+
+// Helpers
+function updateCount() {
+  document.getElementById('charCount').textContent = document.getElementById('cmd').value.length;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 2800);
+}
+
+// Enter to send
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && document.activeElement.id === 'cmd') {
+    e.preventDefault();
+    sendCommand();
+  }
+});
+</script>
+</body>
+</html>
